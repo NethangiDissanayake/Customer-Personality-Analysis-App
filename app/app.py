@@ -49,3 +49,4 @@ if st.button("Predict Segment"):
         st.success(f"This customer belongs to segment: {prediction}")
     except Exception as e:
         st.error(f"Prediction error: {e}")
+
