@@ -5,12 +5,19 @@ import numpy as np
 # Load model
 try:
     model_data = joblib.load('models/kmeans_model.pkl')
-    st.success("Model loaded successfully!")
+    model = model_data['model']
+    
+    # Check if the model is fitted
+    if not hasattr(model, 'cluster_centers_'):
+        st.error("❌ Model is not trained! Please re-train and save it.")
+        st.stop()
+    else:
+        st.success("✅ Model loaded successfully!")
 except Exception as e:
     st.error(f"Error loading model: {e}")
     st.stop()
 
-# Input fields for all 12 features
+# Input fields
 st.header("Customer Segmentation Predictor")
 
 col1, col2 = st.columns(2)
@@ -30,22 +37,17 @@ with col2:
     deals = st.number_input("Discounted purchases count", min_value=0)
     web_purchases = st.number_input("Online purchases count", min_value=0)
 
-# Prediction button
+# Prediction
 if st.button("Predict Segment"):
-    # Create array with ALL 12 features in EXACT order
     input_data = np.array([
         income, kidhome, teenhome, recency,
         mnt_wines, mnt_fruits, mnt_meat,
         mnt_fish, mnt_sweets, mnt_gold,
         deals, web_purchases
-    ]).reshape(1, -1)  # Reshape to (1, 12)
-    
-    # Debug: Print shape and values
-    st.write("Input data shape:", input_data.shape)
-    st.write("Input values:", input_data)
+    ]).reshape(1, -1)  # Ensure shape (1, 12)
     
     try:
-        prediction = model_data['model'].predict(input_data)[0]
-        st.success(f"This customer belongs to segment: {prediction}")
+        prediction = model.predict(input_data)[0]
+        st.success(f"✅ This customer belongs to segment: {prediction}")
     except Exception as e:
-        st.error(f"Prediction error: {e}")
+        st.error(f"❌ Prediction failed: {e}")
