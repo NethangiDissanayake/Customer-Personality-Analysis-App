@@ -1,19 +1,38 @@
 import streamlit as st
 import joblib
+import numpy as np
 
 # Load model
-@st.cache_resource
-def load_model():
-    return {
-        'model': joblib.load('models/kmeans_model.pkl'),
-        'scaler': joblib.load('models/scaler.pkl')
-    }
+model_data = joblib.load('models/kmeans_model.pkl')
 
-data = load_model()
+# Input fields for all 12 features
+st.header("Customer Segmentation Predictor")
 
-st.title("Customer Segment Predictor")
-income = st.number_input("Income", min_value=0)
+col1, col2 = st.columns(2)
+with col1:
+    income = st.number_input("Income ($)", min_value=0)
+    kidhome = st.number_input("Number of kids at home", min_value=0, max_value=5)
+    teenhome = st.number_input("Number of teens at home", min_value=0, max_value=5)
+    recency = st.number_input("Days since last purchase", min_value=0)
+    mnt_wines = st.number_input("Annual wine spending ($)", min_value=0)
+    mnt_fruits = st.number_input("Annual fruit spending ($)", min_value=0)
 
-if st.button("Predict"):
-    prediction = data['model'].predict([[income]])[0]  # Add all your features
-    st.success(f"Segment: {prediction}")
+with col2:
+    mnt_meat = st.number_input("Annual meat spending ($)", min_value=0)
+    mnt_fish = st.number_input("Annual fish spending ($)", min_value=0)
+    mnt_sweets = st.number_input("Annual sweets spending ($)", min_value=0)
+    mnt_gold = st.number_input("Annual gold products spending ($)", min_value=0)
+    deals = st.number_input("Discounted purchases count", min_value=0)
+    web_purchases = st.number_input("Online purchases count", min_value=0)
+
+# Prediction button
+if st.button("Predict Segment"):
+    input_data = np.array([[
+        income, kidhome, teenhome, recency,
+        mnt_wines, mnt_fruits, mnt_meat,
+        mnt_fish, mnt_sweets, mnt_gold,
+        deals, web_purchases
+    ]])
+    
+    prediction = model_data['model'].predict(input_data)[0]
+    st.success(f"This customer belongs to segment: {prediction}")
