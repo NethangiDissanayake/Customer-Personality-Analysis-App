@@ -2,30 +2,13 @@ import streamlit as st
 import joblib
 import numpy as np
 
-# Load model with enhanced verification
+# Load model
 try:
     model_data = joblib.load('models/kmeans_model.pkl')
-    model = model_data['model']  # Directly access the model
-    
-    # Verify model is properly trained
-    if not hasattr(model, 'cluster_centers_'):
-        st.error("Model loaded but not trained! Please retrain the model.")
-        st.stop()
-        
-    st.success("✅ Model loaded and verified successfully!")
-    
+    st.success("Model loaded successfully!")
 except Exception as e:
-    st.error(f"Error loading model: {str(e)}")
+    st.error(f"Error loading model: {e}")
     st.stop()
-
-# Prediction function
-def predict_segment(features):
-    """Takes list of 12 feature values, returns segment"""
-    try:
-        return model.predict(np.array(features).reshape(1, -1))[0]
-    except Exception as e:
-        st.error(f"Prediction failed: {str(e)}")
-        return None
 
 # Input fields for all 12 features
 st.header("Customer Segmentation Predictor")
@@ -50,24 +33,19 @@ with col2:
 # Prediction button
 if st.button("Predict Segment"):
     # Create array with ALL 12 features in EXACT order
-    input_features = [
+    input_data = np.array([
         income, kidhome, teenhome, recency,
         mnt_wines, mnt_fruits, mnt_meat,
         mnt_fish, mnt_sweets, mnt_gold,
         deals, web_purchases
-    ]
+    ]).reshape(1, -1)  # Reshape to (1, 12)
     
-    # Debug info
-    with st.expander("Debug Info"):
-        st.write("Input features:", input_features)
-        st.write("Feature count:", len(input_features))
+    # Debug: Print shape and values
+    st.write("Input data shape:", input_data.shape)
+    st.write("Input values:", input_data)
     
-    # Make prediction
-    segment = predict_segment(input_features)
-    
-    if segment is not None:
-        st.success(f"## Predicted Customer Segment: {segment}")
-        
-        # Optional: Show cluster characteristics
-        with st.expander("Cluster Details"):
-            st.write("Cluster center values:", model.cluster_centers_[segment])
+    try:
+        prediction = model_data['model'].predict(input_data)[0]
+        st.success(f"This customer belongs to segment: {prediction}")
+    except Exception as e:
+        st.error(f"Prediction error: {e}")
