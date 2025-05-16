@@ -2,22 +2,32 @@ import streamlit as st
 import joblib
 import numpy as np
 
-# Load model
+# Load model with enhanced verification
 try:
     model_data = joblib.load('models/kmeans_model.pkl')
-    model = model_data['model']
+    model = model_data['model']  # Directly access the model
     
-    # Check if the model is fitted
+    # Verify model is properly trained
     if not hasattr(model, 'cluster_centers_'):
-        st.error("❌ Model is not trained! Please re-train and save it.")
+        st.error("Model loaded but not trained! Please retrain the model.")
         st.stop()
-    else:
-        st.success("✅ Model loaded successfully!")
+        
+    st.success("✅ Model loaded and verified successfully!")
+    
 except Exception as e:
-    st.error(f"Error loading model: {e}")
+    st.error(f"Error loading model: {str(e)}")
     st.stop()
 
-# Input fields
+# Prediction function
+def predict_segment(features):
+    """Takes list of 12 feature values, returns segment"""
+    try:
+        return model.predict(np.array(features).reshape(1, -1))[0]
+    except Exception as e:
+        st.error(f"Prediction failed: {str(e)}")
+        return None
+
+# Input fields for all 12 features
 st.header("Customer Segmentation Predictor")
 
 col1, col2 = st.columns(2)
@@ -37,17 +47,27 @@ with col2:
     deals = st.number_input("Discounted purchases count", min_value=0)
     web_purchases = st.number_input("Online purchases count", min_value=0)
 
-# Prediction
+# Prediction button
 if st.button("Predict Segment"):
-    input_data = np.array([
+    # Create array with ALL 12 features in EXACT order
+    input_features = [
         income, kidhome, teenhome, recency,
         mnt_wines, mnt_fruits, mnt_meat,
         mnt_fish, mnt_sweets, mnt_gold,
         deals, web_purchases
-    ]).reshape(1, -1)  # Ensure shape (1, 12)
+    ]
     
-    try:
-        prediction = model.predict(input_data)[0]
-        st.success(f"✅ This customer belongs to segment: {prediction}")
-    except Exception as e:
-        st.error(f"❌ Prediction failed: {e}")
+    # Debug info
+    with st.expander("Debug Info"):
+        st.write("Input features:", input_features)
+        st.write("Feature count:", len(input_features))
+    
+    # Make prediction
+    segment = predict_segment(input_features)
+    
+    if segment is not None:
+        st.success(f"## Predicted Customer Segment: {segment}")
+        
+        # Optional: Show cluster characteristics
+        with st.expander("Cluster Details"):
+            st.write("Cluster center values:", model.cluster_centers_[segment])
